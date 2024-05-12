@@ -17,4 +17,5 @@ gem 'csv'
 group :test do
   gem 'rspec', '~> 3.13.0'
   gem 'simplecov', '~> 0.22.0', require: false
+  gem 'steep', '>= 1.6'
 end
