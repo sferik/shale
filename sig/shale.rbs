@@ -1,0 +1,839 @@
+module Shale
+  TOML_ADAPTER_NOT_SET_MESSAGE: String
+  XML_ADAPTER_NOT_SET_MESSAGE: String
+  CSV_ADAPTER_NOT_SET_MESSAGE: String
+  VERSION: String
+  self.@json_adapter: bot
+  self.@yaml_adapter: bot
+
+  def self.json_adapter: -> singleton(Adapter::JSON)
+                       | -> singleton(Adapter::JSON)
+                       | -> singleton(Adapter::JSON)
+  def self.yaml_adapter: -> untyped
+                       | -> untyped
+                       | -> untyped
+
+  class Attribute
+    @collection: false
+
+    attr_reader name: untyped
+    attr_reader type: untyped
+    attr_reader default: ^-> Array[untyped]?
+    attr_reader setter: String
+    def initialize: (untyped name, untyped `type`, false collection, nil default) -> void
+    def collection?: -> bool
+  end
+
+  class UnknownAttributeError < NoMethodError[untyped]
+    def initialize: (String record, untyped attribute) -> void
+                  | (String record, untyped attribute) -> void
+                  | (String record, untyped attribute) -> void
+                  | (untyped record, untyped attribute) -> void
+                  | (untyped record, untyped attribute) -> void
+  end
+
+  class ShaleError < StandardError
+  end
+
+  class DefaultNotCallableError < ShaleError
+    def initialize: (String record, untyped attribute) -> void
+                  | (String record, untyped attribute) -> void
+                  | (String record, untyped attribute) -> void
+                  | (untyped record, untyped attribute) -> void
+                  | (untyped record, untyped attribute) -> void
+  end
+
+  class IncorrectModelError < ShaleError
+  end
+
+  class IncorrectMappingArgumentsError < ShaleError
+  end
+
+  class NotAShaleMapperError < ShaleError
+  end
+
+  class AttributeNotDefinedError < ShaleError
+  end
+
+  class SchemaError < ShaleError
+  end
+
+  class ParseError < ShaleError
+  end
+
+  class AdapterError < ShaleError
+  end
+
+  module Utils
+    def self.upcase_first: (String? str) -> String
+                         | (String? str) -> String
+                         | (String? str) -> String
+                         | (String? str) -> String
+    def self.classify: (String str) -> String
+                     | (String str) -> String
+                     | (String str) -> String
+                     | (String str) -> String
+    def self.snake_case: (String str) -> String
+                       | (String str) -> String
+                       | (String str) -> String
+                       | (String str) -> String
+    def self.underscore: (String str) -> String?
+                       | (untyped str) -> String?
+                       | (untyped str) -> String?
+                       | (untyped str) -> String?
+    def self.presence: (untyped value) -> nil
+                     | (untyped value) -> nil
+                     | (untyped value) -> nil
+                     | (untyped value) -> nil
+  end
+
+  module Mapping
+    module Descriptor
+      class Dict
+        @render_nil: bool?
+
+        attr_reader name: nil
+        attr_reader attribute: nil
+        attr_reader receiver: nil
+        attr_reader method_from: untyped
+        attr_reader method_to: untyped
+        attr_reader group: String?
+        attr_reader schema: nil
+        def initialize: (name: nil, attribute: nil, receiver: nil, methods: {from: untyped, to: untyped}?, group: String?, render_nil: bool?, ?schema: nil) -> void
+        def render_nil?: -> bool
+      end
+
+      class Xml < Dict
+        attr_reader namespace: XmlNamespace
+        attr_reader cdata: false
+        def initialize: (name: nil, attribute: nil, receiver: nil, methods: {from: untyped, to: untyped}?, group: String?, namespace: XmlNamespace, cdata: false, render_nil: false?) -> void
+        def prefixed_name: -> String
+        def namespaced_name: -> String
+      end
+
+      class XmlNamespace
+        attr_accessor name: :undefined?
+        attr_accessor prefix: :undefined?
+        def initialize: (?:undefined? name, ?:undefined? prefix) -> void
+      end
+    end
+
+    module Validator
+      def self.validate_arguments: (String key, nil to, nil receiver, {from: untyped, to: untyped}? using) -> nil
+      def self.validate_namespace: (untyped key, :undefined? namespace, :undefined? prefix) -> nil
+    end
+
+    class DictBase
+      @render_nil_default: bot
+      @finalized: bool
+
+      attr_reader keys: Hash[untyped, Descriptor::Dict]
+      attr_reader root: {min_properties: nil, max_properties: nil, dependent_required: nil}
+      def initialize: (?render_nil_default: bool) -> void
+      def map: (untyped key, ?to: nil, ?receiver: nil, ?using: {from: untyped, to: untyped}?, ?group: String?, ?render_nil: nil, ?schema: nil) -> Descriptor::Dict
+      def properties: (?min_properties: nil, ?max_properties: nil, ?dependent_required: nil) -> {min_properties: nil, max_properties: nil, dependent_required: nil}
+      def finalize!: -> true
+      def finalized?: -> bool
+      def initialize_dup: (untyped other) -> DictBase
+    end
+
+    class DictGroup < DictBase
+      @render_nil_default: bool
+      @from: untyped
+      @to: untyped
+
+      attr_reader name: String
+      def initialize: (untyped from, untyped to) -> void
+      def map: (untyped key) -> Descriptor::Dict
+    end
+
+    class Dict < DictBase
+      @render_nil_default: bool
+
+      def map: (untyped key, ?to: nil, ?receiver: nil, ?using: nil, ?render_nil: nil, ?schema: nil) -> Descriptor::Dict
+      def render_nil: (untyped val) -> untyped
+      def group: (from: untyped, to: untyped) -> Hash[untyped, Descriptor::Dict]
+    end
+
+    class XmlBase
+      @root: String?
+      @render_nil_default: bot
+      @finalized: bool
+
+      attr_reader elements: Hash[String, Descriptor::Xml]
+      attr_reader attributes: Hash[String, Descriptor::Xml]
+      attr_reader content: Descriptor::Xml?
+      attr_reader default_namespace: Descriptor::XmlNamespace
+      def unprefixed_root: -> String?
+      def prefixed_root: -> String
+      def initialize: -> void
+      def map_element: (untyped element, ?to: nil, ?receiver: nil, ?using: {from: untyped, to: untyped}?, ?group: String?, ?namespace: :undefined, ?prefix: :undefined, ?cdata: false, ?render_nil: nil) -> Descriptor::Xml
+      def map_attribute: (untyped attribute, ?to: nil, ?receiver: nil, ?using: {from: untyped, to: untyped}?, ?group: String?, ?namespace: nil, ?prefix: nil, ?render_nil: nil) -> Descriptor::Xml
+      def map_content: (?to: nil, ?receiver: nil, ?using: {from: untyped, to: untyped}?, ?group: String?, ?cdata: false) -> Descriptor::Xml
+      def root: (String? value) -> String?
+      def namespace: (:undefined? name, :undefined? prefix) -> :undefined?
+      def finalize!: -> true
+      def finalized?: -> bool
+      def initialize_dup: (untyped other) -> XmlBase
+    end
+
+    class XmlGroup < XmlBase
+      @render_nil_default: false
+      @from: untyped
+      @to: untyped
+
+      attr_reader name: String
+      def initialize: (untyped from, untyped to) -> void
+      def map_element: (untyped element, ?namespace: :undefined, ?prefix: :undefined) -> Descriptor::Xml
+      def map_attribute: (untyped attribute, ?namespace: nil, ?prefix: nil) -> Descriptor::Xml
+      def map_content: -> Descriptor::Xml
+    end
+
+    class Xml < XmlBase
+      @render_nil_default: false
+
+      def map_element: (untyped element, ?to: nil, ?receiver: nil, ?using: nil, ?namespace: :undefined, ?prefix: :undefined, ?cdata: false, ?render_nil: nil) -> Descriptor::Xml
+      def map_attribute: (untyped attribute, ?to: nil, ?receiver: nil, ?using: nil, ?namespace: nil, ?prefix: nil, ?render_nil: nil) -> Descriptor::Xml
+      def map_content: (?to: nil, ?receiver: nil, ?using: nil, ?cdata: false) -> Descriptor::Xml
+      def render_nil: (untyped val) -> untyped
+      def group: (from: untyped, to: untyped) -> Descriptor::Xml?
+    end
+
+    class Delegates
+      @delegates: Array[Delegate]
+
+      def initialize: -> void
+                    | -> void
+      def add: (untyped receiver_attribute, untyped setter, untyped value) -> Array[Delegate]
+             | (untyped receiver_attribute, untyped setter, untyped value) -> Array[Delegate]
+      def add_collection: (untyped receiver_attribute, untyped setter, untyped value) -> Array[Delegate]
+                        | (untyped receiver_attribute, untyped setter, untyped value) -> Array[Delegate]
+      def each: -> Enumerator[Delegate, untyped]
+              | ?{ -> untyped } -> (Array[Delegate] | Enumerator[Delegate, untyped])
+
+      class Delegate
+        attr_reader receiver_attribute: untyped
+        attr_reader setter: untyped
+        attr_reader value: [untyped]
+        def initialize: (untyped receiver_attribute, untyped setter, [untyped] value) -> void
+                      | (untyped receiver_attribute, untyped setter, [untyped] value) -> void
+      end
+    end
+
+    module Group
+      class Dict
+        attr_reader method_from: untyped
+        attr_reader method_to: untyped
+        attr_reader dict: Hash[:attributes | :content | :elements, Hash[untyped, untyped]?]
+        def initialize: (untyped method_from, untyped method_to) -> void
+        def add: (untyped key, untyped value) -> untyped
+      end
+
+      class DictGrouping
+        @groups: Hash[untyped, Dict]
+
+        def initialize: -> void
+                      | -> void
+        def add: (untyped mapping, untyped value) -> untyped
+               | (untyped mapping, untyped value) -> untyped
+        def each: ?{ -> untyped } -> (Array[Dict | Xml] | Enumerator[Dict, untyped])
+                | ?{ -> untyped } -> (Array[Dict | Xml] | Enumerator[Dict, untyped])
+      end
+
+      class Xml < Dict
+        def initialize: (untyped method_from, untyped method_to) -> void
+        def add: (:attribute | :content | :element kind, untyped key, nil value) -> nil
+      end
+
+      class XmlGrouping < DictGrouping
+        @groups: Hash[untyped, Xml]
+
+        def add: (untyped mapping, :attribute | :content | :element kind, nil value) -> nil
+               | (untyped mapping, untyped kind, untyped value) -> nil
+      end
+    end
+  end
+
+  module Type
+    class Value
+      def self.cast: (untyped value) -> untyped
+      def self.of_hash: (untyped value, **untyped) -> untyped
+      def self.as_hash: (Complex value, **nil) -> Complex
+      def self.of_json: (untyped value, **nil) -> untyped
+      def self.as_json: (Complex value, **nil) -> Complex
+      def self.of_yaml: (untyped value, **nil) -> untyped
+      def self.as_yaml: (Complex value, **nil) -> Complex
+      def self.of_toml: (untyped value, **nil) -> untyped
+      def self.as_toml: (Complex value, **nil) -> Complex
+      def self.of_csv: (untyped value, **nil) -> untyped
+      def self.as_csv: (Complex value, **nil) -> Complex
+      def self.of_xml: (untyped node, **untyped) -> untyped
+      def self.as_xml_value: (untyped value) -> untyped
+      def self.as_xml: (untyped value, untyped name, untyped doc, ?false cdata, **untyped) -> untyped
+    end
+
+    class Complex < Value
+      alias self.from_hash self.of_hash
+      alias self.to_hash self.as_hash
+      def self.from_json: (untyped json, ?only: nil, ?except: nil, ?context: nil, **untyped) -> untyped
+      def self.to_json: (Complex `instance`, ?only: nil, ?except: nil, ?context: nil, ?pretty: false, **untyped) -> String
+      def self.from_yaml: (untyped yaml, ?only: nil, ?except: nil, ?context: nil, **untyped) -> untyped
+      def self.to_yaml: (Complex `instance`, ?only: nil, ?except: nil, ?context: nil, **untyped) -> untyped
+      def self.from_toml: (untyped toml, ?only: nil, ?except: nil, ?context: nil, **untyped) -> untyped
+      def self.to_toml: (Complex `instance`, ?only: nil, ?except: nil, ?context: nil, **untyped) -> untyped
+      def self.from_csv: (untyped csv, ?only: nil, ?except: nil, ?context: nil, ?headers: false, **untyped) -> untyped
+      def self.to_csv: (Complex `instance`, ?only: nil, ?except: nil, ?context: nil, ?headers: false, **untyped) -> untyped
+      def self.of_xml: (untyped element, ?only: nil, ?except: nil, ?context: nil) -> untyped
+      def self.from_xml: (untyped xml, ?only: nil, ?except: nil, ?context: nil) -> untyped
+      def self.as_xml: (Complex `instance`, ?nil node_name, ?nil doc, ?nil _cdata, ?only: nil, ?except: nil, ?context: nil, ?version: false?) -> untyped
+      def self.to_xml: (Complex `instance`, ?only: nil, ?except: nil, ?context: nil, ?pretty: false, ?declaration: false, ?encoding: false) -> untyped
+      def self.validate_toml_adapter: -> nil
+      def self.validate_xml_adapter: -> nil
+      def self.validate_csv_adapter: -> nil
+      def self.to_partial_render_attributes: (nil ary) -> nil
+      def self.get_receiver_attributes: (untyped mapping) -> untyped
+      def self.get_receiver: (untyped `instance`, untyped receiver_attribute) -> untyped
+      def to_hash: (?only: nil, ?except: nil, ?context: nil) -> Complex
+      def to_json: (?only: nil, ?except: nil, ?context: nil, ?pretty: false, **untyped) -> String
+      def to_yaml: (?only: nil, ?except: nil, ?context: nil, **untyped) -> untyped
+      def to_toml: (?only: nil, ?except: nil, ?context: nil, **untyped) -> untyped
+      def to_csv: (?only: nil, ?except: nil, ?context: nil, ?headers: false, **untyped) -> untyped
+      def to_xml: (?only: nil, ?except: nil, ?context: nil, ?pretty: false, ?declaration: false, ?encoding: false) -> untyped
+    end
+
+    class Boolean < Value
+      FALSE_VALUES: [false, Integer, String, String, String, String, String, String, String]
+
+      def self.cast: (untyped value) -> bool?
+    end
+
+    class Date < Value
+      def self.cast: (untyped value) -> Date?
+      def self.as_json: (untyped value, **untyped) -> untyped
+      def self.as_yaml: (untyped value, **untyped) -> untyped
+      def self.as_csv: (untyped value, **untyped) -> untyped
+      def self.as_xml_value: (untyped value) -> untyped
+    end
+
+    class Float < Value
+      def self.cast: (untyped value) -> Float?
+    end
+
+    class Integer < Value
+      def self.cast: (untyped value) -> untyped
+    end
+
+    class String < Value
+      def self.cast: (untyped value) -> untyped
+    end
+
+    class Time < Value
+      def self.cast: (untyped value) -> Time?
+      def self.as_json: (untyped value, **untyped) -> untyped
+      def self.as_yaml: (untyped value, **untyped) -> untyped
+      def self.as_csv: (untyped value, **untyped) -> untyped
+      def self.as_xml_value: (untyped value) -> untyped
+    end
+  end
+
+  class Mapper < Type::Complex
+    self.@model: nil
+    self.@attributes: Hash[untyped, Attribute]
+    self.@hash_mapping: Mapping::Dict?
+    self.@json_mapping: Mapping::Dict?
+    self.@yaml_mapping: Mapping::Dict?
+    self.@toml_mapping: Mapping::Dict?
+    self.@csv_mapping: Mapping::Dict?
+    self.@xml_mapping: Mapping::Xml?
+    self.@attributes_module: bot
+    self.@__hash_mapping_init: bot
+    self.@__json_mapping_init: bot
+    self.@__yaml_mapping_init: bot
+    self.@__toml_mapping_init: bot
+    self.@__csv_mapping_init: bot
+    self.@__xml_mapping_init: bot
+
+    def self.inherited: (untyped subclass) -> untyped
+    def self.model: (?nil klass) -> nil
+    def self.attribute: (untyped name, untyped `type`, ?collection: false, ?default: nil) -> untyped
+    def self.hsh: -> untyped
+    def self.json: -> untyped
+    def self.yaml: -> untyped
+    def self.toml: -> untyped
+    def self.csv: -> untyped
+    def self.xml: -> untyped
+    def initialize: (**untyped) -> void
+  end
+
+  module Adapter
+    class JSON
+      def self.load: (untyped json, **untyped) -> untyped
+      def self.dump: (Hash[String, String?] obj, **false) -> String
+    end
+
+    class CSV
+      def self.load: (untyped csv, headers: untyped, **untyped) -> Array[Hash[untyped, untyped]]
+      def self.dump: (untyped obj, headers: untyped, **untyped) -> String
+    end
+
+    module Nokogiri
+      def self.load: (untyped xml) -> Node
+      def self.dump: (untyped doc, ?pretty: false, ?declaration: false, ?encoding: false) -> untyped
+      def self.create_document: (?nil version) -> Document
+
+      class Document
+        @doc: Nokogiri::XML::Document
+        @namespaces: Hash[untyped, untyped]
+
+        def initialize: (?nil version) -> void
+        def doc: -> Nokogiri::XML::Document
+        def create_element: (untyped name) -> untyped
+        def create_cdata: (untyped text, untyped parent) -> untyped
+        def add_namespace: (untyped prefix, untyped namespace) -> nil
+        def add_attribute: (untyped element, untyped name, untyped value) -> untyped
+        def add_element: (untyped element, untyped child) -> untyped
+        def add_text: (untyped element, untyped text) -> untyped
+      end
+
+      class Node
+        @node: untyped
+
+        def initialize: (untyped node) -> void
+        def namespaces: -> untyped
+        def name: -> String
+        def attributes: -> untyped
+        def parent: -> Node?
+        def children: -> untyped
+        def text: -> untyped
+      end
+    end
+
+    module Ox
+      def self.load: (untyped xml) -> Node
+      def self.dump: (untyped doc, ?pretty: false, ?declaration: false, ?encoding: false) -> untyped
+      def self.create_document: (?nil _version) -> Document
+
+      class Document
+        attr_reader doc: Ox::Document
+        def initialize: -> void
+        def create_element: (untyped name) -> Ox::Element
+        def create_cdata: (untyped text, untyped parent) -> untyped
+        def add_namespace: (untyped prefix, untyped namespace) -> nil
+        def add_attribute: (untyped element, untyped name, untyped value) -> untyped
+        def add_element: (untyped element, untyped child) -> untyped
+        def add_text: (untyped element, untyped text) -> untyped
+      end
+
+      class Node
+        @node: untyped
+
+        def initialize: (untyped node) -> void
+        def namespaces: -> Hash[untyped, untyped]
+        def name: -> untyped
+        def attributes: -> untyped
+        def parent: -> nil
+        def children: -> untyped
+        def text: -> untyped
+      end
+    end
+
+    module REXML
+      def self.load: (untyped xml) -> Node
+      def self.dump: (untyped doc, ?pretty: false, ?declaration: false, ?encoding: false) -> String
+      def self.create_document: (?nil _version) -> Document
+
+      class Document
+        @doc: untyped
+        @namespaces: Hash[untyped, untyped]
+
+        def initialize: -> void
+        def doc: -> untyped
+        def create_element: (untyped name) -> untyped
+        def create_cdata: (untyped text, untyped parent) -> untyped
+        def add_namespace: (untyped prefix, untyped namespace) -> nil
+        def add_attribute: (untyped element, untyped name, untyped value) -> untyped
+        def add_element: (untyped element, untyped child) -> untyped
+        def add_text: (untyped element, untyped text) -> untyped
+      end
+
+      class Node
+        @node: untyped
+
+        def initialize: (untyped node) -> void
+        def namespaces: -> untyped
+        def name: -> String
+        def attributes: -> untyped
+        def parent: -> Node?
+        def children: -> untyped
+        def text: -> untyped
+      end
+    end
+
+    class TomlRB
+      def self.load: (untyped toml, **untyped) -> Hash[untyped, untyped]
+      def self.dump: (untyped obj, **untyped) -> bot
+    end
+
+    class Tomlib
+      def self.load: (untyped toml, **untyped) -> bool
+      def self.dump: (untyped obj, **untyped) -> untyped
+    end
+  end
+
+  module Schema
+    def self.to_json: (untyped klass, ?id: nil, ?title: nil, ?description: nil, ?pretty: false) -> String
+    def self.from_json: (untyped schemas, ?root_name: nil, ?namespace_mapping: nil) -> untyped
+    def self.to_xml: (untyped klass, ?nil base_name, ?pretty: false, ?declaration: false) -> untyped
+    def self.from_xml: (untyped schemas, ?namespace_mapping: nil) -> untyped
+
+    class JSONGenerator
+      self.@json_types: Hash[singleton(Type::Boolean) | singleton(Type::Date) | singleton(Type::Float) | singleton(Type::Integer) | singleton(Type::Time) | singleton(Type::Value), singleton(Boolean) | singleton(Date) | singleton(Float) | singleton(Integer) | singleton(Time) | singleton(Value)]
+
+      def self.register_json_type: (singleton(Type::Boolean) | singleton(Type::Date) | singleton(Type::Float) | singleton(Type::Integer) | singleton(Type::Time) | singleton(Type::Value) shale_type, singleton(Boolean) | singleton(Date) | singleton(Float) | singleton(Integer) | singleton(Time) | singleton(Value) json_type) -> (singleton(Boolean) | singleton(Date) | singleton(Float) | singleton(Integer) | singleton(Time) | singleton(Value))
+      def self.get_json_type: (untyped shale_type) -> (singleton(Boolean) | singleton(Date) | singleton(Float) | singleton(Integer) | singleton(Time) | singleton(Value))
+      def as_schema: (untyped klass, ?id: nil, ?title: nil, ?description: nil) -> Hash[String, String?]
+      def to_schema: (untyped klass, ?id: nil, ?title: nil, ?description: nil, ?pretty: false) -> String
+
+      private
+      def mapper_type?: (untyped `type`) -> untyped
+      def collect_complex_types: (Array[untyped] types, untyped `type`) -> untyped
+
+      class Schema
+        DIALECT: String
+        @types: Array[Object]
+        @id: nil
+        @title: nil
+        @description: nil
+
+        def initialize: (Array[Object] types, ?id: nil, ?title: nil, ?description: nil) -> void
+        def as_json: -> Hash[String, String?]
+      end
+
+      class Base
+        @default: nil
+
+        attr_reader name: untyped
+        attr_reader schema: Hash[untyped, untyped]
+        attr_writer nullable: true
+        def initialize: (untyped name, ?default: nil, ?schema: nil) -> void
+        def as_json: -> (Hash[String, (Array[untyped] | String)?])
+      end
+
+      class Boolean < Base
+        def as_type: -> Hash[String, String]
+      end
+
+      class Collection
+        @type: Boolean | Date | Float | Integer | Ref | Time | Value
+
+        attr_reader schema: nil
+        def initialize: (Boolean | Date | Float | Integer | Ref | Time | Value `type`, ?schema: nil) -> void
+        def name: -> untyped
+        def as_json: -> (Hash[String, (Hash[String, (Array[String] | String)?] | String)?])
+      end
+
+      class Date < Base
+        def as_type: -> Hash[String, String]
+      end
+
+      class Float < Base
+        def as_type: -> Hash[String, String?]
+      end
+
+      class Integer < Base
+        def as_type: -> Hash[String, String?]
+      end
+
+      class Object < Base
+        @nullable: bool
+        @root: untyped
+        @properties: Array[untyped]
+
+        def initialize: (untyped name, Array[untyped] properties, untyped root) -> void
+        def as_type: -> Hash[String, String?]
+      end
+
+      class Ref < Base
+        @type: untyped
+
+        def initialize: (untyped name, untyped `type`) -> void
+        def as_type: -> Hash[String, String]
+      end
+
+      class String < Base
+        def as_type: -> Hash[String, String?]
+      end
+
+      class Time < Base
+        def as_type: -> Hash[String, String]
+      end
+
+      class Value < Base
+        def as_type: -> Hash[String, [String, String, String, String, String]]
+      end
+    end
+
+    module Compiler
+      class Boolean
+        def name: -> String
+      end
+
+      class Complex
+        @package: String?
+
+        attr_reader id: String
+        attr_reader properties: Array[Property]
+        attr_writer root_name: String
+        def initialize: (String id, String root_name, nil package) -> void
+        def root_name: -> String
+        def name: -> String
+        def modules: -> Array[String]
+        def file_name: -> String
+        def relative_path: (untyped target) -> String
+        def references: -> Array[Property]
+        def add_property: (Property property) -> Array[Property]?
+      end
+
+      class Date
+        def name: -> String
+      end
+
+      class Float
+        def name: -> String
+      end
+
+      class Integer
+        def name: -> String
+      end
+
+      class Property
+        @collection: bool
+        @default: nil
+
+        attr_reader mapping_name: String
+        attr_reader attribute_name: String
+        attr_reader type: (Boolean | Complex | Date | Float | Integer | String | Time | Value)?
+        def initialize: (String name, (Boolean | Complex | Date | Float | Integer | String | Time | Value)? `type`, bool collection, nil default) -> void
+        def collection?: -> bool
+        def default: -> nil
+      end
+
+      class String
+        def name: -> String
+      end
+
+      class Time
+        def name: -> String
+      end
+
+      class Value
+        def name: -> String
+      end
+
+      class XMLComplex < Complex
+        attr_accessor root: untyped
+        attr_reader prefix: nil
+        attr_reader namespace: nil
+        def initialize: (String id, untyped root_name, nil prefix, nil namespace, nil package) -> void
+      end
+
+      class XMLProperty < Property
+        @category: :attribute | :content | :element
+
+        attr_reader namespace: nil
+        attr_reader prefix: nil
+        def initialize: (name: String, type: (Boolean | Date | Float | Integer | String | Time | Value)?, collection: bool, default: nil, prefix: nil, namespace: nil, category: :attribute | :content | :element) -> void
+        def content?: -> bool
+        def attribute?: -> bool
+        def element?: -> bool
+      end
+    end
+
+    class JSONCompiler
+      DEFAULT_ROOT_NAME: String
+      MODEL_TEMPLATE: ERB
+      @root_name: nil
+      @namespace_mapping: Hash[untyped, untyped]
+      @schema_repository: Hash[untyped, {id: untyped, key: untyped, schema: untyped}]
+      @types: Array[Compiler::Complex]
+
+      def as_models: (untyped schemas, ?root_name: nil, ?namespace_mapping: nil) -> Array[Compiler::Complex]
+      def to_models: (untyped schemas, ?root_name: nil, ?namespace_mapping: nil) -> untyped
+
+      private
+      def build_id: (String base_id, String? id) -> String
+      def build_pointer: (String id, Array[untyped] fragment) -> untyped
+      def resolve_ref: (String base_id, untyped ref) -> {id: untyped, key: untyped, schema: untyped}?
+      def infer_type: (true schema, untyped id, String name) -> ((Compiler::Boolean | Compiler::Complex | Compiler::Date | Compiler::Float | Compiler::Integer | Compiler::String | Compiler::Time | Compiler::Value)?)
+      def disassemble_schema: (untyped schema, ?Array[untyped] fragment, ?String base_id) -> [String, String]?
+      def compile: (untyped schema, bool is_root, ?String base_id, ?Array[untyped] fragment) -> Compiler::Property?
+    end
+
+    class XMLGenerator
+      DEFAULT_SCHEMA_NAME: String
+      self.@xml_types: Hash[singleton(Type::Boolean) | singleton(Type::Date) | singleton(Type::Float) | singleton(Type::Integer) | singleton(Type::Time) | singleton(Type::Value), String]
+
+      def self.register_xml_type: (singleton(Type::Boolean) | singleton(Type::Date) | singleton(Type::Float) | singleton(Type::Integer) | singleton(Type::Time) | singleton(Type::Value) shale_type, String xml_type) -> String
+      def self.get_xml_type: (untyped shale_type) -> String
+      def as_schemas: (untyped klass, ?nil base_name) -> Array[untyped]
+      def to_schemas: (untyped klass, ?nil base_name, ?pretty: false, ?declaration: false) -> untyped
+
+      private
+      def mapper_type?: (untyped `type`) -> untyped
+      def collect_complex_types: (Array[{type: untyped, namespace: untyped}] types, untyped `type`, untyped namespace) -> untyped
+      def schematize: (untyped word) -> untyped
+      def get_xml_type_for_attribute: (untyped `type`, untyped namespace) -> String
+      def get_default_for_attribute: (untyped attribute) -> nil
+
+      class Attribute
+        @default: nil
+
+        def initialize: (nil default) -> void
+        def as_xml: (untyped doc) -> untyped
+      end
+
+      class Element
+        @default: nil
+        @collection: false
+        @required: bool
+
+        def initialize: (nil default, false collection, bool required) -> void
+        def as_xml: (untyped doc) -> untyped
+      end
+
+      class ComplexType
+        @children: Array[untyped]
+        @mixed: false
+
+        attr_reader name: untyped
+        def initialize: (untyped name, ?Array[untyped] children, ?mixed: false) -> void
+        def as_xml: (untyped doc) -> untyped
+      end
+
+      class Import
+        @location: untyped
+
+        attr_reader namespace: untyped
+        def initialize: (untyped namespace, untyped location) -> void
+        def as_xml: (untyped doc) -> untyped
+      end
+
+      class RefAttribute < Attribute
+        @ref: untyped
+
+        def initialize: (ref: untyped, ?default: nil) -> void
+
+        private
+        def attributes: -> Hash[String, untyped]
+      end
+
+      class RefElement < Element
+        @ref: untyped
+
+        def initialize: (ref: untyped, ?default: nil, ?collection: false, ?required: false) -> void
+
+        private
+        def attributes: -> Hash[String, untyped]
+      end
+
+      class Schema
+        NAMESPACE_NAME: String
+        @target_namespace: untyped
+        @namespaces: Array[{prefix: untyped, name: untyped}]
+        @children: Array[untyped]
+
+        attr_reader name: String
+        def initialize: (String name, untyped target_namespace) -> void
+        def add_namespace: (untyped prefix, untyped name) -> Array[{prefix: untyped, name: untyped}]
+        def add_child: (untyped child) -> Array[untyped]
+        def as_xml: -> untyped
+      end
+
+      class TypedAttribute < Attribute
+        @type: String
+
+        attr_reader name: untyped
+        def initialize: (name: untyped, type: String, ?default: nil) -> void
+
+        private
+        def attributes: -> Hash[String, String]
+      end
+
+      class TypedElement < Element
+        @type: String
+
+        attr_reader name: untyped
+        def initialize: (name: untyped, type: String, ?default: nil, ?collection: false, ?required: bool) -> void
+        def attributes: -> Hash[String, String]
+      end
+    end
+
+    class XMLCompiler
+      XML_NAMESPACE_URI: String
+      XML_NAMESPACE_PREFIX: String
+      XS_NAMESPACE_URI: String
+      XS_SCHEMA: String
+      XS_ELEMENT: String
+      XS_ATTRIBUTE: String
+      XS_SIMPLE_TYPE: String
+      XS_SIMPLE_CONTENT: String
+      XS_RESTRICTION: String
+      XS_GROUP: String
+      XS_ATTRIBUTE_GROUP: String
+      XS_COMPLEX_TYPE: String
+      XS_COMPLEX_CONTENT: String
+      XS_EXTENSION: String
+      XS_TYPE_ANY: String
+      XS_TYPE_DATE: [String]
+      XS_TYPE_TIME: [String]
+      XS_TYPE_STRING: [String, String, String]
+      XS_TYPE_FLOAT: [String, String, String]
+      XS_TYPE_INTEGER: [String, String, String, String, String, String, String, String, String, String, String, String, String]
+      XS_TYPE_BOOLEAN: [String]
+      MODEL_TEMPLATE: ERB
+      @namespace_mapping: Hash[untyped, untyped]
+      @elements_repository: Hash[untyped, untyped]
+      @attributes_repository: Hash[untyped, untyped]
+      @simple_types_repository: Hash[untyped, untyped]
+      @element_groups_repository: Hash[untyped, untyped]
+      @attribute_groups_repository: Hash[untyped, untyped]
+      @complex_types_repository: Hash[untyped, untyped]
+      @complex_types: Hash[untyped, untyped]
+      @types: Array[untyped]
+
+      def as_models: (untyped schemas, ?namespace_mapping: nil) -> Array[untyped]
+      def to_models: (untyped schemas, ?namespace_mapping: nil) -> untyped
+
+      private
+      def node_is_a?: (untyped node, String name) -> untyped
+      def has_attribute?: (untyped node, String name) -> untyped
+      def traverse: (untyped node) ?{ (untyped) -> ((Compiler::XMLComplex | String | true)?) } -> untyped
+      def get_namespaces: (nil schema) -> untyped
+      def get_schema: (nil node) -> nil
+      def join_id_parts: (untyped name, String namespace) -> String
+      def build_id_from_name: (untyped name, untyped namespace) -> String
+      def build_id_from_parents: (untyped node, untyped namespace) -> String
+      def build_id: (untyped node) -> String
+      def replace_ns_prefixes: (String | true `type`, untyped namespaces) -> (String | true)
+      def normalize_type_ref: (untyped node) -> (String | true)
+      def infer_simple_type: (untyped node) -> String
+      def resolve_ref: (Hash[untyped, untyped] repository, String | true ref) -> nil
+      def resolve_complex_type_namespace: (untyped node) -> [untyped, untyped]?
+      def resolve_namespace: (untyped node, String form_default) -> [untyped, untyped]?
+      def build_repositories: (untyped schema) -> untyped
+      def resolve_nested_refs: (Hash[untyped, untyped] repo) -> nil
+      def infer_type: (untyped node) -> ((Compiler::Boolean | Compiler::Date | Compiler::Float | Compiler::Integer | Compiler::String | Compiler::Time | Compiler::Value)?)
+      def infer_type_from_xs_type: (String | true `type`, untyped namespaces) -> ((Compiler::Boolean | Compiler::Date | Compiler::Float | Compiler::Integer | Compiler::String | Compiler::Time | Compiler::Value)?)
+      def infer_collection: (untyped node, untyped max_occurs) -> bool
+      def find_extension: (nil node) -> ((String | true)?)
+      def find_restriction: (nil node) -> ((String | true)?)
+      def find_content: (nil node) -> String?
+      def find_attributes: (nil node) -> Array[untyped]
+      def find_elements: (nil node) -> Array[untyped]
+      def compile_complex_type: (nil complex_type, nil node, ?mode: :restriction | :standard) -> Array[untyped]?
+      def find_top_level_elements: (untyped schema) -> untyped
+      def collect_active_types: (untyped `type`) -> nil
+      def compile: (untyped schema) -> untyped
+    end
+  end
+end
